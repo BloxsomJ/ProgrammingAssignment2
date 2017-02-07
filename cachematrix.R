@@ -5,34 +5,32 @@
 ## Creates an environment containing a matrix x, an empty container m, and a list
 ## of commands to set and retrieve those variables.
 
-makeCacheMatrix <- function(x = matrix()) {
-  i <- NULL
-  set <- function(y) {
-    x <<- y
-    i <<- NULL
+makeCacheMatrix <- function(mat = matrix()) {
+  set_matrix <- function(y = matrix()) {
+    mat <<- y #place y in the value of x outside the subfunction
+    inverse <<- NULL #reset the cache when x changed
   }
-  get <- function() x
-  setinv <- function(inv) i <<- inv
-  getinv <- function() i
-  list(set = set, get = get, setinv = setinv, getinv = getinv)
+  set_matrix(mat) #initialises the cache via the subfunction
+  get_matrix <- function() mat #returns x stored in the function environment
+  set_cache <- function(inv) inverse <<- inv #write to cache
+  get_cache <- function() inverse #read from cache
+  list(set_matrix = set_matrix,
+       get_matrix = get_matrix,
+       set_cache = set_cache,
+       get_cache = get_cache) #names the functions to enable calling with $
 }
 
 ## This function takes the 'x-environment' created by function makeCacheMatrix as
-## an argument. It first fills a local i with the value of i stored in the loaded
-## environment. If this already contains a value, it reports so and returns the
-## stored value. If not it loads the x which stores the matrix to be inverted,
-## inverts it, places the inverted matrix inside the x-environment, and returns it
-## as the result of the function. As the i is now inside the x-environment it can
-## be recalled by future calls of cacheSolve(x).
+## an argument. It first checks to see if the cache is empty. If so, it performs
+## the inversion and returns the result. If the cache is occupied, it returns the
+## contents of the cache.
 
-cacheSolve <- function(x, ...) {
-  i <- x$getinv()
-  if(!is.null(i)) {
-    message("getting cached data")
-    return(i)
-  }
-  data <- x$get()
-  i <- solve(data, ...)
-  x$setinv(i)
-  i
+cacheSolve <- function(mat) {
+  if(is.null(mat$get_cache())) { #if cache is empty, determine and return inverse
+    inverse <- solve(mat$get_matrix()) #retrieve and invert the matrix
+    mat$set_cache(inverse) #write into cache
+    return(inverse) #return inverse
+  }#otherwise, return cached value
+  message("reading from cache")
+  return(mat$get_cache()) #return value from cache
 }
